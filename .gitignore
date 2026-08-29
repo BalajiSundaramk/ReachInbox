@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment files — never commit real secrets
+.env
+.env.*
+!.env.example
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Vite generated files
+vite.config.d.ts
+vite.config.js
+
+# Development artifacts
+tree.txt
+cookies.txt
+
+# Upload directory — runtime file storage, not source code
+backend/uploads/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS artifacts
+.DS_Store
+Thumbs.db

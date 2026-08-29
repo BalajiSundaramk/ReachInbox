@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum EmailStatus {
+  SCHEDULED
+  PROCESSING
+  SENT
+  FAILED
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Char(36)
+  googleId  String?  @unique
+  name      String
+  email     String   @unique
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  senders   Sender[]
+  emails    Email[]
+}
+
+model Sender {
+  id        String   @id @default(uuid()) @db.Char(36)
+  userId    String   @db.Char(36)
+  email     String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emails    Email[]
+
+  @@index([userId])
+  @@index([email])
+}
+
+model SlackConnection {
+  id                   String   @id @default(uuid()) @db.Char(36)
+  scopeKey             String   @unique @default("global")
+  teamId               String
+  teamName             String?
+  channelId            String?
+  channelName          String?
+  accessTokenEncrypted String   @db.Text
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model Attachment {
+  id        String   @id @default(uuid()) @db.Char(36)
+  emailId   String?  @db.Char(36)
+  filename  String
+  mimeType  String
+  size      Int
+  path      String   @db.Text
+  createdAt DateTime @default(now())
+
+  email     Email?   @relation(fields: [emailId], references: [id], onDelete: Cascade)
+
+  @@index([emailId])
+}
+
+model Email {
+  id             String      @id @default(uuid()) @db.Char(36)
+  userId         String?     @db.Char(36)
+  senderId       String?     @db.Char(36)
+  recipient      String?
+  attempts       Int         @default(0)
+  idempotencyKey String?     @unique
+  failureReason  String?     @db.Text
+  user           User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sender         Sender?     @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  recipientEmail String?
+  senderEmail    String?
+  subject        String
+  body           String      @db.LongText
+  scheduledAt    DateTime
+  status         EmailStatus @default(SCHEDULED)
+  jobId          String?     @unique
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  sentAt         DateTime?
+  failedAt       DateTime?
+  errorMessage   String?     @db.Text
+  previewUrl     String?     @db.Text
+
+  attachments    Attachment[]
+
+  @@index([userId])
+  @@index([senderId])
+  @@index([recipient])
+  @@index([recipientEmail])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([createdAt])
+}
